@@ -311,5 +311,4 @@ In accordance with the [VaayuNetra Product Specification](docs/product-spec.md):
 ---
 
 ## 👥 Contributors
-
-- Tarun Tanmay ~Team Syntax Sorcery
+- Tanisha Choudhary and Tarun Tanmay ~Team Syntax Sorcery
