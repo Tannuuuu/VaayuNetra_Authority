@@ -45,6 +45,100 @@ function setNav(page) {
   });
 }
 
+/* ========== BILINGUAL LOCALIZATION (EN / HI) ========== */
+const I18N = {
+  en: {
+    nav_home: "Home",
+    nav_map: "Air Maps",
+    nav_events: "Events",
+    nav_forecast: "Forecast",
+    nav_actions: "Actions",
+    nav_advisories: "Advisories",
+    user_role: "Authority Officer",
+    search_placeholder: "Search Indian cities (e.g. Mumbai, Bengaluru, Kolkata, Delhi)...",
+    toast_lang_title: "Language Changed",
+    toast_lang_body: "Authority console switched to English",
+    region_label: "📍 INDIA REGION:",
+    view_options: "◎ View Options",
+    layers_filters_btn: "🎛️ Layers & Filters",
+    pollutant: "Pollutant",
+    aqi_color_area: "AQI Color Area",
+    close: "Close",
+    apply: "Apply",
+    events_heading: "Environmental Events",
+    events_sub: "Event-centric priority queue · multi-source evidence corroboration",
+    actions_heading: "Authority Actions & Dispatch",
+    actions_sub: "Dispatch, notices, field inspections, anti-smog deployments",
+    draft_notice_btn: "📜 Draft notice",
+    generate_notice_btn: "Generate notice",
+  },
+  hi: {
+    nav_home: "होम",
+    nav_map: "वायु मानचित्र",
+    nav_events: "प्रदूषण घटनाएं",
+    nav_forecast: "पूर्वानुमान",
+    nav_actions: "त्वरित कार्रवाई",
+    nav_advisories: "जन परामर्श",
+    user_role: "प्राधिकरण अधिकारी",
+    search_placeholder: "भारतीय शहर खोजें (उदा. दिल्ली, मुंबई, बेंगलुरु, कोलकाता)...",
+    toast_lang_title: "भाषा परिवर्तित",
+    toast_lang_body: "प्राधिकरण कंसोल हिंदी (Hindi) में सक्रिय किया गया।",
+    region_label: "📍 भारत क्षेत्र:",
+    view_options: "◎ दृश्य विकल्प (फिल्टर)",
+    layers_filters_btn: "🎛️ परतें एवं फिल्टर",
+    pollutant: "प्रदूषक तत्व",
+    aqi_color_area: "AQI रंग क्षेत्र",
+    close: "बंद करें",
+    apply: "लागू करें",
+    events_heading: "पर्यावरणीय घटनाएं (प्रदूषण)",
+    events_sub: "घटना-केंद्रित प्राथमिकता सूची · बहु-स्रोत साक्ष्य सत्यापन",
+    actions_heading: "प्राधिकरण कार्रवाई एवं प्रेषण",
+    actions_sub: "दल प्रेषण, वैधानिक नोटिस (धारा 31A), फील्ड निरीक्षण",
+    draft_notice_btn: "📜 नोटिस तैयार करें",
+    generate_notice_btn: "नोटिस जारी करें",
+  }
+};
+
+let CURRENT_LANG = localStorage.getItem('vaayunetra_lang') || 'en';
+
+function t(key) {
+  return (I18N[CURRENT_LANG] && I18N[CURRENT_LANG][key]) || (I18N.en[key] || key);
+}
+
+function setLanguage(lang, triggerToast = true) {
+  if (lang !== 'en' && lang !== 'hi') lang = 'en';
+  CURRENT_LANG = lang;
+  try { localStorage.setItem('vaayunetra_lang', lang); } catch (e) {}
+
+  // Update pills active status
+  const pillEn = document.getElementById('langBtnEn');
+  const pillHi = document.getElementById('langBtnHi');
+  if (pillEn && pillHi) {
+    pillEn.classList.toggle('active', lang === 'en');
+    pillHi.classList.toggle('active', lang === 'hi');
+  }
+
+  // Update static DOM elements with data-i18n
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.dataset.i18n;
+    if (I18N[lang] && I18N[lang][k]) {
+      el.textContent = I18N[lang][k];
+    }
+  });
+
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    searchInput.placeholder = t('search_placeholder');
+  }
+
+  if (triggerToast) {
+    toast(t('toast_lang_title'), t('toast_lang_body'));
+  }
+
+  // Re-render current page
+  router();
+}
+
 function toggleMobileViewOptions() {
   const panel = document.getElementById('dashViewOptions');
   const fab = document.getElementById('mobileFilterFab');
@@ -311,6 +405,11 @@ function openNoticeModal(notice) {
     cEn.style.display = 'none';
   };
 
+  // If authority officer selected Hindi globally, open Hindi notice directly
+  if (CURRENT_LANG === 'hi') {
+    btnHi.click();
+  }
+
   // Close handler
   document.getElementById('closeNoticeModalBtn').onclick = () => backdrop.remove();
   backdrop.onclick = (e) => { if (e.target === backdrop) backdrop.remove(); };
@@ -576,7 +675,7 @@ function viewDashboard() {
   <div class="page" style="height:calc(100vh - 64px); display:flex; flex-direction:column; padding-bottom:16px;">
     <!-- Regional Quick Switch Bar -->
     <div class="region-bar">
-      <span class="region-label">📍 INDIA REGION:</span>
+      <span class="region-label">${t('region_label')}</span>
       ${REGIONS.map(r => `
         <button class="region-pill ${r.name === CURRENT_CITY ? 'active' : ''}" data-city="${r.name}" onclick="switchRegion('${r.name}')">
           ${r.name}
@@ -591,24 +690,24 @@ function viewDashboard() {
 
         <!-- Mobile Filter Toggle Button -->
         <button class="mobile-filter-fab btn btn-sm btn-primary" id="mobileFilterFab" onclick="toggleMobileViewOptions()">
-          🎛️ Layers & Filters
+          ${t('layers_filters_btn')}
         </button>
 
         <!-- View Options panel -->
         <div class="view-options" id="dashViewOptions">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <h4 style="margin:0;">◎ View Options</h4>
+            <h4 style="margin:0;">${t('view_options')}</h4>
             <button class="view-options-close" onclick="toggleMobileViewOptions()" title="Close layers">✕</button>
           </div>
-          <div class="opt"><span>Pollutant</span></div>
+          <div class="opt"><span>${t('pollutant')}</span></div>
           <div class="opt"><span>PM2.5</span><input type="checkbox" id="dashOptPm25" checked></div>
           <div class="opt"><span>PM10</span><input type="checkbox" id="dashOptPm10" checked></div>
           <div class="opt"><span>O₃</span><input type="checkbox" id="dashOptO3"></div>
           <div class="opt"><span>NO₂</span><input type="checkbox" id="dashOptNo2"></div>
-          <div class="opt"><span>AQI Color Area</span><input type="checkbox" id="dashOptAqiColor" checked></div>
+          <div class="opt"><span>${t('aqi_color_area')}</span><input type="checkbox" id="dashOptAqiColor" checked></div>
           <div class="actions">
-            <button class="btn btn-ghost btn-sm" onclick="toggleMobileViewOptions()">Close</button>
-            <button class="btn btn-primary btn-sm" data-act="apply">Apply</button>
+            <button class="btn btn-ghost btn-sm" onclick="toggleMobileViewOptions()">${t('close')}</button>
+            <button class="btn btn-primary btn-sm" data-act="apply">${t('apply')}</button>
           </div>
         </div>
 
@@ -1338,6 +1437,11 @@ function viewAdvisories() {
 /* ========== BOOT ========== */
 window.addEventListener('hashchange', router);
 window.addEventListener('DOMContentLoaded', async () => {
+  // Global Language Switcher
+  document.getElementById('langBtnEn')?.addEventListener('click', () => setLanguage('en'));
+  document.getElementById('langBtnHi')?.addEventListener('click', () => setLanguage('hi'));
+  setLanguage(CURRENT_LANG, false);
+
   router();
 
   // Notification Bell Click -> Open Alerts Dropdown
