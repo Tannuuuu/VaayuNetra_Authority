@@ -40,6 +40,8 @@ class ActiveWarning(BaseModel):
     distance_meters: float
     direction_from_user: str
     message: str
+    hindi_message: Optional[str] = None
+    punjabi_message: Optional[str] = None
 
 
 class FeedWeather(BaseModel):
@@ -69,8 +71,12 @@ class AIVisionResult(BaseModel):
     confidence: float
     detected_category: str
     visual_evidence: bool
-    model_version: str = "VaayuNetra-Vision-v1.0"
+    model_version: str = "Google-Gemini-1.5-Flash"
     details: Optional[str] = None
+    reasoning: Optional[str] = None
+    plume_density: Optional[str] = None
+    ai_engine: Optional[str] = "Google Gemini Multimodal"
+    recommended_authority: Optional[str] = None
 
 
 class SatelliteThermalMatch(BaseModel):
@@ -276,6 +282,9 @@ class LegalNoticeDocument(BaseModel):
     compliance_deadline_hours: int = 24
     penal_provisions: str
     html_document: str
+    hindi_document: Optional[str] = None
+    gemini_reasoning: Optional[str] = None
+    statutory_citation: Optional[str] = "Section 31A, Air (Prevention and Control of Pollution) Act, 1981"
 
 
 # --- Alert Item (docs/api.md) ---

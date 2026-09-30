@@ -24,3 +24,7 @@ CORS_ORIGINS = [
     "http://10.0.2.2:8000",  # Android emulator localhost alias
     "*",
 ]
+
+# Google AI / Gemini Settings
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")

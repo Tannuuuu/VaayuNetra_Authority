@@ -34,6 +34,10 @@ from backend.services.dispersion import (
 from backend.services.receptors import find_impacted_receptors
 from backend.services.satellite import find_satellite_thermal_match
 from backend.services.weather import get_wind_vector
+from backend.services.gemini_service import (
+    generate_bilingual_statutory_text,
+    generate_multilingual_citizen_advisory,
+)
 
 
 class IncidentManager:
@@ -71,8 +75,12 @@ class IncidentManager:
                 confidence=0.95,
                 detected_category="OPEN_BURNING",
                 visual_evidence=True,
-                model_version="VaayuNetra-Vision-v1.0",
+                model_version="Google-Gemini-1.5-Flash",
                 details="Open combustion flare and high particulate density smoke column identified.",
+                reasoning="Dense pyrocumulus column with low base chrominance variance and active combustion thermal flare.",
+                plume_density="Ringelmann 4 (80% opacity)",
+                ai_engine="Google Gemini Multimodal",
+                recommended_authority="MCD Solid Waste Flying Squad",
             ),
             satellite_thermal_match=SatelliteThermalMatch(
                 matched=True,
@@ -111,8 +119,12 @@ class IncidentManager:
                 confidence=0.88,
                 detected_category="INDUSTRIAL_EMISSION",
                 visual_evidence=True,
-                model_version="VaayuNetra-Vision-v1.0",
+                model_version="Google-Gemini-1.5-Flash",
                 details="High-volume black smoke plume from unauthorized industrial smelting stack.",
+                reasoning="Continuous point-source stack plume exceeding standard opacity baselines with visible particulate fallout.",
+                plume_density="Ringelmann 3 (60% opacity)",
+                ai_engine="Google Gemini Multimodal",
+                recommended_authority="DPCC Industrial Enforcement Wing",
             ),
             satellite_thermal_match=SatelliteThermalMatch(
                 matched=True,
@@ -151,8 +163,12 @@ class IncidentManager:
                 confidence=0.86,
                 detected_category="DUST",
                 visual_evidence=True,
-                model_version="VaayuNetra-Vision-v1.0",
+                model_version="Google-Gemini-1.5-Flash",
                 details="Fugitive dust plume from unpaved road shoulder and transit construction.",
+                reasoning="Ground-level sandy particulate suspension with high opacity along transit road shoulder.",
+                plume_density="Ringelmann 2 (40% opacity)",
+                ai_engine="Google Gemini Multimodal",
+                recommended_authority="PWD Anti-Smog Dust Mitigation",
             ),
             satellite_thermal_match=SatelliteThermalMatch(
                 matched=False,
@@ -275,9 +291,21 @@ class IncidentManager:
             inside = is_point_inside_plume(user_lat, user_lon, plume_dict)
             dist_m = calculate_distance_meters(user_lat, user_lon, inc.latitude, inc.longitude)
             
-            # If user is inside the plume or within 300 meters
+            # If user is inside the plume or within 350 meters
             if inside or dist_m < 350.0:
                 direction = get_bearing_cardinal(inc.latitude, inc.longitude, user_lat, user_lon)
+                dist_km = max(0.1, dist_m / 1000.0)
+                eta_min = max(2, int(dist_m / (inc.wind_vector.speed_mps * 60))) if inc.wind_vector.speed_mps > 0 else 15
+                
+                hi_msg = generate_multilingual_citizen_advisory(
+                    pollutant="PM2.5", peak_value=312.0, unit="µg/m³",
+                    distance_km=dist_km, eta_minutes=eta_min, lang="HI"
+                )
+                pa_msg = generate_multilingual_citizen_advisory(
+                    pollutant="PM2.5", peak_value=312.0, unit="µg/m³",
+                    distance_km=dist_km, eta_minutes=eta_min, lang="PA"
+                )
+                
                 warnings.append(
                     ActiveWarning(
                         incident_id=inc.ticket_id,
@@ -291,6 +319,8 @@ class IncidentManager:
                             f"{inc.category.replace('_', ' ')} incident located {int(dist_m)}m away. "
                             f"Recommended to stay indoors and close windows."
                         ),
+                        hindi_message=hi_msg,
+                        punjabi_message=pa_msg,
                     )
                 )
         return warnings
@@ -1062,6 +1092,23 @@ class IncidentManager:
 </body>
 </html>"""
 
+        # Generate bilingual statutory text via Gemini service
+        bilingual_data = generate_bilingual_statutory_text(
+            event_id=ev.id,
+            event_title=ev.title,
+            pollutant=ev.pollutant,
+            peak_value=ev.peakValue,
+            unit=ev.unit,
+            baseline=ev.baseline,
+            anomaly_score=ev.anomalyScore,
+            lat=ev.lat,
+            lng=ev.lng,
+            jurisdiction=ev.jurisdiction,
+            impacted_schools=ev.exposure.get("schools", 0),
+            impacted_hospitals=ev.exposure.get("hospitals", 0),
+            impacted_population=ev.exposure.get("population", 0),
+        )
+
         return LegalNoticeDocument(
             notice_id=f"NOT-{ev.id}",
             event_id=ev.id,
@@ -1082,6 +1129,9 @@ class IncidentManager:
             compliance_deadline_hours=24,
             penal_provisions="Section 37 Air Act 1981 & Section 15 Environment (Protection) Act 1986",
             html_document=html_doc,
+            hindi_document=bilingual_data["hindi_document"],
+            gemini_reasoning=bilingual_data["gemini_reasoning"],
+            statutory_citation="Section 31A, Air (Prevention and Control of Pollution) Act, 1981",
         )
 
     def get_alerts(self) -> List[AlertItem]:

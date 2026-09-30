@@ -45,6 +45,16 @@ function setNav(page) {
   });
 }
 
+function toggleMobileViewOptions() {
+  const panel = document.getElementById('dashViewOptions');
+  const fab = document.getElementById('mobileFilterFab');
+  if (!panel) return;
+  panel.classList.toggle('open');
+  if (fab) {
+    fab.style.display = panel.classList.contains('open') ? 'none' : 'inline-flex';
+  }
+}
+
 /* ========== ROUTER ========== */
 function router() {
   destroyCharts();
@@ -185,49 +195,89 @@ function openNoticeModal(notice) {
   const backdrop = document.createElement('div');
   backdrop.id = 'noticeModalBackdrop';
   backdrop.className = 'modal-backdrop';
+
+  const hindiText = notice.hindi_document || `कार्यालय: ${notice.issuing_authority}
+संदर्भ संख्या: ${notice.reference_no}
+स्थान: ${notice.event_title} (${notice.coordinates})
+
+सर्वसंबंधित को वैधानिक आदेश:
+वायुनेत्र स्वायत्त वायु गुणवत्ता ग्रिड द्वारा आपके परिसर/कार्यक्षेत्र से अत्यधिक मात्रा में ${notice.peak_pollutant} का गैर-कानूनी उत्सर्जन दर्ज किया गया है।
+
+आदेश निर्देश:
+1. उपरोक्त स्थल पर सभी प्रकार के खुले दहन व अनियंत्रित उत्सर्जन को तत्काल प्रभाव से बंद किया जाए।
+2. 500 मीटर के दायरे में एंटी-स्मॉग गन व जल छिड़काव दल तत्काल तैनात किया जाए।
+3. अगले 24 घंटे के भीतर लिखित अनुपालन रिपोर्ट सक्षम मजिस्ट्रेट के समक्ष प्रस्तुत की जाए।
+
+उल्लंघन की स्थिति में वायु अधिनियम, 1981 की धारा 37 के तहत कानूनी कार्यवाही की जाएगी।`;
+
   backdrop.innerHTML = `
-    <div class="modal-card">
+    <div class="modal-card" style="max-width:820px;">
       <div class="modal-header">
-        <h3>📄 Regulatory Notice Dossier — ${notice.reference_no}</h3>
-        <button class="btn btn-ghost btn-sm" id="closeNoticeModalBtn">✕</button>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <h3>📄 Statutory Regulatory Notice — ${notice.reference_no}</h3>
+          <span style="background:linear-gradient(135deg,#3b82f6,#8b5cf6); color:white; font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px;">✨ Google Gemini AI</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="display:flex; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:2px;">
+            <button class="btn btn-sm btn-primary" id="btnNoticeLangEn" style="padding:4px 10px; font-size:11px;">English</button>
+            <button class="btn btn-sm btn-ghost" id="btnNoticeLangHi" style="padding:4px 10px; font-size:11px; border:none;">हिंदी (Hindi)</button>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="closeNoticeModalBtn">✕</button>
+        </div>
       </div>
       <div class="modal-body" id="noticePrintArea">
-        <div style="text-align:center; border-bottom:2px solid #333; padding-bottom:10px; margin-bottom:14px;">
-          <div style="font-size:14px; font-weight:800; text-transform:uppercase;">Government Environmental Protection Directorate</div>
-          <div style="font-size:13px; font-weight:700; color:#0d9488;">${notice.issuing_authority}</div>
-          <div style="font-size:11px; color:#64748b;">Autonomous Enforcement & Environmental Incident Command</div>
+        <div id="noticeEnContainer">
+          <div style="text-align:center; border-bottom:2px solid #333; padding-bottom:10px; margin-bottom:14px;">
+            <div style="font-size:14px; font-weight:800; text-transform:uppercase;">Government Environmental Protection Directorate</div>
+            <div style="font-size:13px; font-weight:700; color:#0d9488;">${notice.issuing_authority}</div>
+            <div style="font-size:11px; color:#64748b;">Autonomous Enforcement & Environmental Incident Command</div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:12px;">
+            <div><strong>Ref:</strong> ${notice.reference_no}</div>
+            <div><strong>Date:</strong> ${notice.issued_at}</div>
+          </div>
+
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 12px; margin-bottom:12px; font-size:12px;">
+            <div><strong>TO:</strong> ${notice.recipient}</div>
+            <div><strong>COORDINATES:</strong> ${notice.coordinates} · <strong>SEVERITY:</strong> <span class="pill pill-${notice.severity.toLowerCase()}">${notice.severity}</span></div>
+            <div><strong>POLLUTANT:</strong> ${notice.peak_pollutant} (Baseline: ${notice.baseline}, Anomaly: ${notice.anomaly})</div>
+          </div>
+
+          ${notice.gemini_reasoning ? `
+          <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:8px 12px; margin-bottom:12px; font-size:12px; color:#1e40af;">
+            <strong>✨ Google Gemini Statutory Analysis:</strong> ${notice.gemini_reasoning}
+          </div>` : ''}
+
+          <div style="font-weight:700; font-size:13px; margin-bottom:6px; text-decoration:underline;">${notice.subject}</div>
+
+          <div style="font-size:12px; font-weight:700; margin:10px 0 4px;">CORROBORATED EVIDENCE DOSSIER:</div>
+          <table style="font-size:11px; width:100%; margin-bottom:12px;">
+            <thead>
+              <tr><th>Source Instrument</th><th>Telemetry & Finding</th></tr>
+            </thead>
+            <tbody>
+              ${notice.evidence_summary.map(e => `<tr><td><strong>${e.source}</strong></td><td>${e.details}</td></tr>`).join('')}
+            </tbody>
+          </table>
+
+          <div style="font-size:12px; font-weight:700; margin-bottom:4px;">MANDATORY STATUTORY DIRECTIVES:</div>
+          <ol style="font-size:12px; padding-left:18px; line-height:1.6; margin-bottom:12px;">
+            ${notice.directives.map(d => `<li>${d}</li>`).join('')}
+          </ol>
+
+          <div style="border:1px dashed #ef4444; background:#fef2f2; padding:10px; border-radius:8px; font-size:11px; color:#991b1b; margin-bottom:10px;">
+            <strong>PENAL CLAUSE:</strong> ${notice.penal_provisions}. Failure to abate violation within ${notice.compliance_deadline_hours} hours will initiate criminal prosecution and environmental compensation penalty.
+          </div>
         </div>
 
-        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:12px;">
-          <div><strong>Ref:</strong> ${notice.reference_no}</div>
-          <div><strong>Date:</strong> ${notice.issued_at}</div>
-        </div>
-
-        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 12px; margin-bottom:12px; font-size:12px;">
-          <div><strong>TO:</strong> ${notice.recipient}</div>
-          <div><strong>COORDINATES:</strong> ${notice.coordinates} · <strong>SEVERITY:</strong> <span class="pill pill-${notice.severity.toLowerCase()}">${notice.severity}</span></div>
-          <div><strong>POLLUTANT:</strong> ${notice.peak_pollutant} (Baseline: ${notice.baseline}, Anomaly: ${notice.anomaly})</div>
-        </div>
-
-        <div style="font-weight:700; font-size:13px; margin-bottom:6px; text-decoration:underline;">${notice.subject}</div>
-
-        <div style="font-size:12px; font-weight:700; margin:10px 0 4px;">CORROBORATED EVIDENCE DOSSIER:</div>
-        <table style="font-size:11px; width:100%; margin-bottom:12px;">
-          <thead>
-            <tr><th>Source Instrument</th><th>Telemetry & Finding</th></tr>
-          </thead>
-          <tbody>
-            ${notice.evidence_summary.map(e => `<tr><td><strong>${e.source}</strong></td><td>${e.details}</td></tr>`).join('')}
-          </tbody>
-        </table>
-
-        <div style="font-size:12px; font-weight:700; margin-bottom:4px;">MANDATORY STATUTORY DIRECTIVES:</div>
-        <ol style="font-size:12px; padding-left:18px; line-height:1.6; margin-bottom:12px;">
-          ${notice.directives.map(d => `<li>${d}</li>`).join('')}
-        </ol>
-
-        <div style="border:1px dashed #ef4444; background:#fef2f2; padding:10px; border-radius:8px; font-size:11px; color:#991b1b; margin-bottom:10px;">
-          <strong>PENAL CLAUSE:</strong> ${notice.penal_provisions}. Failure to abate violation within ${notice.compliance_deadline_hours} hours will initiate criminal prosecution and environmental compensation penalty.
+        <div id="noticeHiContainer" style="display:none; font-family:'Segoe UI', Tahoma, sans-serif;">
+          <div style="text-align:center; border-bottom:2px solid #333; padding-bottom:10px; margin-bottom:14px;">
+            <div style="font-size:16px; font-weight:bold; color:#0f172a;">दिल्ली राष्ट्रीय राजधानी क्षेत्र सरकार / राज्य पर्यावरण प्राधिकरण</div>
+            <div style="font-size:13px; font-weight:600; color:#0284c7; margin-top:4px;">वायुनेत्र स्वायत्त प्रवर्तन एवं वैधानिक प्रकोष्ठ</div>
+            <div style="font-size:11px; color:#64748b;">(वायु (प्रदूषण निवारण एवं नियंत्रण) अधिनियम, 1981 की धारा 31ए के अंतर्गत वैधानिक निर्देश)</div>
+          </div>
+          <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:16px; font-size:13px; white-space:pre-wrap; line-height:1.8;">${hindiText}</div>
         </div>
       </div>
       <div class="modal-footer">
@@ -238,6 +288,28 @@ function openNoticeModal(notice) {
   `;
 
   document.body.appendChild(backdrop);
+
+  // Language switchers
+  const btnEn = document.getElementById('btnNoticeLangEn');
+  const btnHi = document.getElementById('btnNoticeLangHi');
+  const cEn = document.getElementById('noticeEnContainer');
+  const cHi = document.getElementById('noticeHiContainer');
+
+  btnEn.onclick = () => {
+    btnEn.className = 'btn btn-sm btn-primary';
+    btnHi.className = 'btn btn-sm btn-ghost';
+    btnHi.style.border = 'none';
+    cEn.style.display = 'block';
+    cHi.style.display = 'none';
+  };
+
+  btnHi.onclick = () => {
+    btnHi.className = 'btn btn-sm btn-primary';
+    btnEn.className = 'btn btn-sm btn-ghost';
+    btnEn.style.border = 'none';
+    cHi.style.display = 'block';
+    cEn.style.display = 'none';
+  };
 
   // Close handler
   document.getElementById('closeNoticeModalBtn').onclick = () => backdrop.remove();
@@ -517,9 +589,17 @@ function viewDashboard() {
       <div class="map-section">
         <div id="mainMap" class="map-el"></div>
 
+        <!-- Mobile Filter Toggle Button -->
+        <button class="mobile-filter-fab btn btn-sm btn-primary" id="mobileFilterFab" onclick="toggleMobileViewOptions()">
+          🎛️ Layers & Filters
+        </button>
+
         <!-- View Options panel -->
-        <div class="view-options">
-          <h4>◎ View Options</h4>
+        <div class="view-options" id="dashViewOptions">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h4 style="margin:0;">◎ View Options</h4>
+            <button class="view-options-close" onclick="toggleMobileViewOptions()" title="Close layers">✕</button>
+          </div>
           <div class="opt"><span>Pollutant</span></div>
           <div class="opt"><span>PM2.5</span><input type="checkbox" id="dashOptPm25" checked></div>
           <div class="opt"><span>PM10</span><input type="checkbox" id="dashOptPm10" checked></div>
@@ -527,7 +607,7 @@ function viewDashboard() {
           <div class="opt"><span>NO₂</span><input type="checkbox" id="dashOptNo2"></div>
           <div class="opt"><span>AQI Color Area</span><input type="checkbox" id="dashOptAqiColor" checked></div>
           <div class="actions">
-            <button class="btn btn-ghost btn-sm" onclick="toast('Reset', 'Default layers restored')">Cancel</button>
+            <button class="btn btn-ghost btn-sm" onclick="toggleMobileViewOptions()">Close</button>
             <button class="btn btn-primary btn-sm" data-act="apply">Apply</button>
           </div>
         </div>

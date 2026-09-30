@@ -36,11 +36,15 @@ def test_citizen_feed():
 
 
 def test_citizen_feed_inside_plume_warning():
-    """Verify user located directly inside Ghazipur downwind plume receives active warning."""
+    """Verify user located directly inside Ghazipur downwind plume receives active warning with multilingual alerts."""
     response = client.get("/api/v1/feed?lat=28.6250&lon=77.3400")
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data["active_warnings"], list)
+    if len(data["active_warnings"]) > 0:
+        w = data["active_warnings"][0]
+        assert "hindi_message" in w and w["hindi_message"] is not None
+        assert "punjabi_message" in w and w["punjabi_message"] is not None
 
 
 def test_municipal_incidents_geojson():
@@ -107,6 +111,9 @@ def test_incident_report_multipart():
     assert ticket["ticket_id"].startswith("TKT-")
     assert ticket["status"] == "VERIFIED"
     assert ticket["ai_vision"]["confidence"] >= 0.70
+    assert "Gemini" in ticket["ai_vision"]["model_version"] or "Gemini" in str(ticket["ai_vision"].get("ai_engine", ""))
+    assert ticket["ai_vision"].get("reasoning") is not None
+    assert ticket["ai_vision"].get("plume_density") is not None
     assert ticket["wind_vector"]["speed_mps"] > 0
     assert ticket["plume_geometry"]["type"] == "Polygon"
     assert len(ticket["impacted_receptors"]) > 0
@@ -213,7 +220,7 @@ def test_forecast_hourly_api():
 
 
 def test_legal_notice_generation():
-    """Verify GET /api/v1/events/{id}/notice returns structured statutory notice and HTML format."""
+    """Verify GET /api/v1/events/{id}/notice returns structured statutory notice, Gemini reasoning, and bilingual formats."""
     res = client.get("/api/v1/events/EVT-2026-0847/notice")
     assert res.status_code == 200
     doc = res.json()
@@ -223,13 +230,22 @@ def test_legal_notice_generation():
     assert "Air" in doc["penal_provisions"] or "Air" in doc["subject"]
     assert len(doc["directives"]) >= 3
     assert len(doc["evidence_summary"]) >= 1
+    assert "hindi_document" in doc and len(doc["hindi_document"]) > 20
+    assert "gemini_reasoning" in doc and len(doc["gemini_reasoning"]) > 10
 
-    # HTML format for print preview
+    # English HTML format for print preview
     html_res = client.get("/api/v1/events/EVT-2026-0847/notice?format=html")
     assert html_res.status_code == 200
     assert "text/html" in html_res.headers.get("content-type", "")
     assert "STATUTORY" in html_res.text
     assert "EVT-2026-0847" in html_res.text
+
+    # Hindi HTML format for vernacular enforcement
+    hindi_res = client.get("/api/v1/events/EVT-2026-0847/notice?format=hindi")
+    assert hindi_res.status_code == 200
+    assert "text/html" in hindi_res.headers.get("content-type", "")
+    assert "वैधानिक" in hindi_res.text
+    assert "अधिनियम" in hindi_res.text
 
 
 def test_alerts_api():
