@@ -1,7 +1,7 @@
 # VaayuNetra (वायुनेत्र)
 
 > **Multi-Source Environmental Intelligence & Hyper-Local Pollution-Event Decision Support Platform**  
-> *Developed for Smart India Hackathon (SIH)*
+
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://python.org)
