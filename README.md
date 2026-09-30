@@ -7,7 +7,12 @@
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://python.org)
 [![GeoJSON](https://img.shields.io/badge/GeoJSON-RFC_7946-2c3e50.svg?style=flat)](https://datatracker.ietf.org/doc/html/rfc7946)
 [![Leaflet](https://img.shields.io/badge/Leaflet-1.9.4-199900.svg?style=flat&logo=leaflet&logoColor=white)](https://leafletjs.com)
+[![Render](https://img.shields.io/badge/Render-Live%20Deployment-46E3B7.svg?style=flat&logo=render&logoColor=white)](https://vaayunetra-authority.onrender.com/dashboard)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat)](LICENSE)
+
+> 🚀 **Live Production Deployment:** [https://vaayunetra-authority.onrender.com/dashboard](https://vaayunetra-authority.onrender.com/dashboard)  
+> 📖 **Interactive Swagger / API Docs:** [https://vaayunetra-authority.onrender.com/docs](https://vaayunetra-authority.onrender.com/docs)  
+> 🩺 **System Health & Discovery:** [https://vaayunetra-authority.onrender.com/](https://vaayunetra-authority.onrender.com/)
 
 ---
 
@@ -198,22 +203,15 @@ docker build -t vayunetra . && docker run -p 8000:8000 vayunetra
 
 Then open **http://localhost:8000/dashboard**.
 
-### Public demo URL (shareable, no cloud account needed)
+### 🌐 Live Cloud Deployment (Production on Render)
 
-Expose the container to the internet with a Cloudflare Quick Tunnel:
+The platform is permanently deployed on **Render** (Singapore Region):
 
-```bash
-docker run -d --name vayunetra-tunnel --restart unless-stopped \
-  cloudflare/cloudflared:latest tunnel --no-autoupdate \
-  --url http://host.docker.internal:8000
+- **Authority Command Dashboard**: [https://vaayunetra-authority.onrender.com/dashboard](https://vaayunetra-authority.onrender.com/dashboard)
+- **Interactive OpenAPI / Swagger Docs**: [https://vaayunetra-authority.onrender.com/docs](https://vaayunetra-authority.onrender.com/docs)
+- **Health Check & API Map**: [https://vaayunetra-authority.onrender.com/](https://vaayunetra-authority.onrender.com/)
 
-# get the public URL:
-docker logs vayunetra-tunnel | grep trycloudflare
-```
-
-You receive a URL like `https://<random>.trycloudflare.com` — the dashboard is then at `https://<random>.trycloudflare.com/dashboard`. Shareable with anyone while your machine is on. Note: the URL changes on every tunnel restart; for a permanent public deployment use Render/Railway with this Dockerfile instead.
-
-If the tunnel drops (laptop sleep etc.): `docker restart vayunetra-tunnel`, then fetch the new URL from its logs.
+> **Uptime & Keep-Alive:** The service is configured for 24/7 availability with continuous uptime monitoring on `https://vaayunetra-authority.onrender.com/` to eliminate cold starts.
 
 ### Prerequisites (non-Docker)
 - Python 3.10, 3.11, 3.12, or 3.13
@@ -247,9 +245,9 @@ python -m uvicorn backend.app:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ### 5. Access the Platform
-- **Authority Web Dashboard**: [http://localhost:8000/dashboard](http://localhost:8000/dashboard)
-- **Interactive OpenAPI Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
-- **Health Check & API Map**: [http://localhost:8000/](http://localhost:8000/)
+- **Live Authority Web Dashboard**: [https://vaayunetra-authority.onrender.com/dashboard](https://vaayunetra-authority.onrender.com/dashboard) *(Local: [http://localhost:8000/dashboard](http://localhost:8000/dashboard))*
+- **Live OpenAPI / Swagger Docs**: [https://vaayunetra-authority.onrender.com/docs](https://vaayunetra-authority.onrender.com/docs) *(Local: [http://localhost:8000/docs](http://localhost:8000/docs))*
+- **Live Health Check & API Map**: [https://vaayunetra-authority.onrender.com/](https://vaayunetra-authority.onrender.com/) *(Local: [http://localhost:8000/](http://localhost:8000/))*
 
 ---
 
